@@ -57,47 +57,56 @@ const DrawingCanvas = React.forwardRef(({ stage, character, components }, ref) =
     }
   }, [stage, character, components, fontLoaded, clearAndRedraw]);
 
-  const startDrawing = useCallback((e) => {
-    e.preventDefault(); // デフォルトの動作を防ぐ
+  const getCoordinates = useCallback((event) => {
     const canvas = canvasRef.current;
     const rect = canvas.getBoundingClientRect();
-    const x = (e.clientX || e.touches[0].clientX) - rect.left;
-    const y = (e.clientY || e.touches[0].clientY) - rect.top;
-    const context = canvas.getContext('2d');
+    const clientX = event.clientX || (event.touches && event.touches[0].clientX);
+    const clientY = event.clientY || (event.touches && event.touches[0].clientY);
+    return {
+      x: clientX - rect.left,
+      y: clientY - rect.top
+    };
+  }, []);
+
+  const startDrawing = useCallback((event) => {
+    event.preventDefault();
+    const { x, y } = getCoordinates(event);
+    const context = canvasRef.current.getContext('2d');
     context.beginPath();
     context.moveTo(x, y);
     context.lineWidth = 8;
     context.lineCap = 'round';
     context.strokeStyle = '#000000';
     setIsDrawing(true);
-  }, []);
+  }, [getCoordinates]);
 
-  const draw = useCallback((e) => {
+  const draw = useCallback((event) => {
     if (!isDrawing) return;
-    e.preventDefault(); // デフォルトの動作を防ぐ
-    const canvas = canvasRef.current;
-    const rect = canvas.getBoundingClientRect();
-    const x = (e.clientX || e.touches[0].clientX) - rect.left;
-    const y = (e.clientY || e.touches[0].clientY) - rect.top;
-    const context = canvas.getContext('2d');
+    event.preventDefault();
+    const { x, y } = getCoordinates(event);
+    const context = canvasRef.current.getContext('2d');
     context.lineTo(x, y);
     context.stroke();
-  }, [isDrawing]);
+  }, [isDrawing, getCoordinates]);
 
   const stopDrawing = useCallback(() => {
     setIsDrawing(false);
   }, []);
 
-  // タッチイベントハンドラー
-  const handleTouchStart = useCallback((e) => {
-    e.preventDefault();
-    startDrawing(e.touches[0]);
+  const handleStart = useCallback((event) => {
+    if (event.type === 'mousedown' && event.button !== 0) return;
+    startDrawing(event);
   }, [startDrawing]);
 
-  const handleTouchMove = useCallback((e) => {
-    e.preventDefault();
-    draw(e.touches[0]);
-  }, [draw]);
+  const handleMove = useCallback((event) => {
+    if (event.type === 'mousemove' && !isDrawing) return;
+    draw(event);
+  }, [draw, isDrawing]);
+
+  const handleEnd = useCallback((event) => {
+    if (event.type === 'mouseup' && event.button !== 0) return;
+    stopDrawing();
+  }, [stopDrawing]);
 
   useImperativeHandle(ref, () => ({
     clearAndRedraw,
@@ -110,14 +119,14 @@ const DrawingCanvas = React.forwardRef(({ stage, character, components }, ref) =
         ref={canvasRef}
         width={300}
         height={300}
-        onMouseDown={startDrawing}
-        onMouseMove={draw}
-        onMouseUp={stopDrawing}
-        onMouseOut={stopDrawing}
-        onTouchStart={handleTouchStart}
-        onTouchMove={handleTouchMove}
-        onTouchEnd={stopDrawing}
-        style={{ touchAction: 'none' }} // タッチデバイスでのスクロールを防ぐ
+        onMouseDown={handleStart}
+        onMouseMove={handleMove}
+        onMouseUp={handleEnd}
+        onMouseOut={handleEnd}
+        onTouchStart={handleStart}
+        onTouchMove={handleMove}
+        onTouchEnd={handleEnd}
+        style={{ touchAction: 'none' }}
       />
     </div>
   );

@@ -3,6 +3,10 @@
   src: url('../public/fonts/UDHituAStd-E12.otf')  format('opentype');
 }
 
+.drawing-canvas {
+  touch-action: none;
+}
+
 .drawing-canvas canvas {
   font-family: 'UDHituAStd-E12', sans-serif;
   touch-action: none;
