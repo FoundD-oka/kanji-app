@@ -101,12 +101,14 @@ function App() {
                 type: "text",
                 text: `システム: あなたは6歳の子供向けに漢字の評価を行う優しい先生です。簡単な言葉を使い、励ましながら評価してください。
 
-ユーザー: キャンパスの文字が「${currentChar.char}」と同じか厳密にジャッジして。「すばらしい」、「おしい！」、「お手本をよく見て！」のどれか1つを回答してから簡単なアドバイスをお願い。`
+ユーザー: キャンパスの文字が「${currentChar.char}」と同じか厳密にジャッジして。「すばらしい」、「おしい！」、「お手��をよく見て！」のどれか1つを回答してから簡単なアドバイスをお願い。`
               },
               {
                 type: "image",
-                image_url: {
-                  url: imageDataUrl
+                source: {
+                  type: "base64",
+                  media_type: "image/png",
+                  data: imageDataUrl.split(',')[1]
                 }
               }
             ]
