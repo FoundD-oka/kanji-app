@@ -125,7 +125,9 @@ function App() {
       });
 
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        const errorData = await response.text();
+        console.error('Anthropic API error response:', errorData);
+        throw new Error(`HTTP error! status: ${response.status}, message: ${errorData}`);
       }
 
       const data = await response.json();
