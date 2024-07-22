@@ -3,7 +3,6 @@ import './App.css';
 import DrawingCanvas from './DrawingCanvas';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faEraser, faForward, faRedo, faCheck } from '@fortawesome/free-solid-svg-icons';
-import axios from 'axios';
 
 function App() {
   const [characters, setCharacters] = useState([]);
@@ -83,12 +82,12 @@ function App() {
 
   const handleEvaluate = useCallback(async () => {
     if (!drawingCanvasRef.current) return;
-  
+
     const canvas = drawingCanvasRef.current.getCanvasImage();
     const imageDataUrl = canvas.toDataURL('image/png');
-  
+
     console.log('Image Data URL (first 100 chars):', imageDataUrl.substring(0, 100));
-  
+
     try {
       const currentChar = characters[currentIndex] || { char: '' };
       const requestBody = {
@@ -101,8 +100,8 @@ function App() {
               {
                 type: "text",
                 text: `システム: あなたは6歳の子供向けに漢字の評価を行う優しい先生です。簡単な言葉を使い、励ましながら評価してください。
-      
-      ユーザー: キャンパスの文字が「${currentChar.char}」と同じか厳密にジャッジして。「すば���しい」、「おしい！」、「お手本をよく見て！」のどれか1つを回答してから簡単なアドバイスをお願い。`
+
+ユーザー: キャンパスの文字が「${currentChar.char}」と同じか厳密にジャッジして。「すばらしい」、「おしい！」、「お手本をよく見て！」のどれか1つを回答してから簡単なアドバイスをお願い。`
               },
               {
                 type: "image",
@@ -114,22 +113,27 @@ function App() {
           }
         ]
       };
-  
+
       console.log('Request Body:', JSON.stringify(requestBody, null, 2));
-  
-      const response = await axios.post(
-        '/api/anthropic', // Updated to use Vercel Serverless Function
-        requestBody
-      );
-  
-      console.log('Response:', JSON.stringify(response.data, null, 2));
-  
-      setEvaluation(response.data.content[0].text);
+
+      const response = await fetch('/api/anthropic', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestBody),
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      console.log('Response:', JSON.stringify(data, null, 2));
+
+      setEvaluation(data.content[0].text);
     } catch (error) {
       console.error('Error evaluating kanji:', error);
-      if (error.response) {
-        console.error('Error response:', error.response.data);
-      }
       setEvaluation('評価中にエラーが発生しました。もう一度お試しください。');
     }
   }, [characters, currentIndex, drawingCanvasRef]);
