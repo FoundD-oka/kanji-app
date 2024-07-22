@@ -1,4 +1,5 @@
 import React, { useRef, useState, useEffect, useImperativeHandle, useCallback } from 'react';
+import './DrawingCanvas.css';
 
 const DrawingCanvas = React.forwardRef(({ stage, character, components }, ref) => {
   const canvasRef = useRef(null);
@@ -15,6 +16,7 @@ const DrawingCanvas = React.forwardRef(({ stage, character, components }, ref) =
     context.font = '120px UDHituAStd-E12';
     context.textAlign = 'center';
     context.textBaseline = 'middle';
+    context.lineWidth = 8; // Line width set to 8pt
 
     if (stage === 0) {
       // 全ての構成要素をグレーで描画
@@ -55,27 +57,47 @@ const DrawingCanvas = React.forwardRef(({ stage, character, components }, ref) =
     }
   }, [stage, character, components, fontLoaded, clearAndRedraw]);
 
-  const startDrawing = (e) => {
-    const { offsetX, offsetY } = e.nativeEvent;
-    setIsDrawing(true);
-    const context = canvasRef.current.getContext('2d');
+  const startDrawing = useCallback((e) => {
+    e.preventDefault(); // デフォルトの動作を防ぐ
+    const canvas = canvasRef.current;
+    const rect = canvas.getBoundingClientRect();
+    const x = (e.clientX || e.touches[0].clientX) - rect.left;
+    const y = (e.clientY || e.touches[0].clientY) - rect.top;
+    const context = canvas.getContext('2d');
     context.beginPath();
-    context.moveTo(offsetX, offsetY);
+    context.moveTo(x, y);
+    context.lineWidth = 8;
+    context.lineCap = 'round';
     context.strokeStyle = '#000000';
-    context.lineWidth = 2;
-  };
+    setIsDrawing(true);
+  }, []);
 
-  const draw = (e) => {
+  const draw = useCallback((e) => {
     if (!isDrawing) return;
-    const { offsetX, offsetY } = e.nativeEvent;
-    const context = canvasRef.current.getContext('2d');
-    context.lineTo(offsetX, offsetY);
+    e.preventDefault(); // デフォルトの動作を防ぐ
+    const canvas = canvasRef.current;
+    const rect = canvas.getBoundingClientRect();
+    const x = (e.clientX || e.touches[0].clientX) - rect.left;
+    const y = (e.clientY || e.touches[0].clientY) - rect.top;
+    const context = canvas.getContext('2d');
+    context.lineTo(x, y);
     context.stroke();
-  };
+  }, [isDrawing]);
 
-  const stopDrawing = () => {
+  const stopDrawing = useCallback(() => {
     setIsDrawing(false);
-  };
+  }, []);
+
+  // タッチイベントハンドラー
+  const handleTouchStart = useCallback((e) => {
+    e.preventDefault();
+    startDrawing(e.touches[0]);
+  }, [startDrawing]);
+
+  const handleTouchMove = useCallback((e) => {
+    e.preventDefault();
+    draw(e.touches[0]);
+  }, [draw]);
 
   useImperativeHandle(ref, () => ({
     clearAndRedraw,
@@ -92,6 +114,10 @@ const DrawingCanvas = React.forwardRef(({ stage, character, components }, ref) =
         onMouseMove={draw}
         onMouseUp={stopDrawing}
         onMouseOut={stopDrawing}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={stopDrawing}
+        style={{ touchAction: 'none' }} // タッチデバイスでのスクロールを防ぐ
       />
     </div>
   );
