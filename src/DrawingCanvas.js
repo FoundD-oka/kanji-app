@@ -5,7 +5,6 @@ const DrawingCanvas = React.forwardRef(({ stage, character, components }, ref) =
   const canvasRef = useRef(null);
   const [isDrawing, setIsDrawing] = useState(false);
   const [fontLoaded, setFontLoaded] = useState(false);
-  const [randomOrder, setRandomOrder] = useState([]);
 
   useEffect(() => {
     // Generate a random order when components change
@@ -25,16 +24,16 @@ const DrawingCanvas = React.forwardRef(({ stage, character, components }, ref) =
         context.fillText(comp, 150, 150);
       });
     } else {
-      // stage 1以降: ランダムに画を削除し、残りを黒で描画
+      // stage 1以降: 順番に画を削除し、残りを黒で描画
       const remainingStrokes = components.length - stage;
       if (remainingStrokes > 0) {
         context.fillStyle = '#000000';
-        randomOrder.slice(0, remainingStrokes).forEach((index) => {
-          context.fillText(components[index], 150, 150);
-        });
+        for (let i = 0; i < remainingStrokes; i++) {
+          context.fillText(components[i], 150, 150);
+        }
       }
     }
-  }, [components, stage, randomOrder]);
+  }, [components, stage]);
 
   const clearAndRedraw = useCallback(() => {
     const canvas = canvasRef.current;
